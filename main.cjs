@@ -1,4 +1,4 @@
-// D:\Electron\main.js (Rewritten to CommonJS)
+// D:\Electron\main.cjs (Rewritten to CommonJS)
 
 const { app, BrowserWindow } = require('electron');
 const path = require('path');

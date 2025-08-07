@@ -2,8 +2,8 @@
   "name": "vite-react-typescript-starter",
   "private": true,
   "version": "0.0.0",
-  "main": "./main.js",
-
+  "main": "main.cjs",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:electron": "vite --mode development",
