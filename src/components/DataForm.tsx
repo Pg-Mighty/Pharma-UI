@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, User, UserCheck, CheckCircle, Plus, Calendar, FlaskRound as Flask, Microscope, Edit3, Trash2, Eye, X } from 'lucide-react';
+import { Save, User, UserCheck, CheckCircle, Plus, Calendar,  Edit3, Trash2, Eye, X } from 'lucide-react';
 
 interface BatchRecord {
   planNo: string;
