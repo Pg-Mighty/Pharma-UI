@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import DataForm from './components/DataForm';
+import BatchRecords from './components/BatchRecords';
 import { Home, Database, RefreshCw, FileSpreadsheet, TestTube, FileText } from 'lucide-react';
 
 export type TabType = 'home' | 'master' | 'change' | 'excel' | 'test' | 'report';
@@ -29,12 +30,7 @@ function App() {
                     </div>
                 );
             case 'change':
-                return (
-                    <div className="p-8">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Change Management</h2>
-                        <p className="text-gray-600">Track and manage system changes.</p>
-                    </div>
-                );
+                return <BatchRecords />;
             case 'excel':
                 return (
                     <div className="p-8">
