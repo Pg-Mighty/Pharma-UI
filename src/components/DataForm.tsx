@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Save, Calendar, Edit3, Trash2, X, Plus } from 'lucide-react';
 
-
+// --- INTERFACES ---
 interface BatchRecord {
   planNo: string;
   product: string;
@@ -18,7 +18,7 @@ interface BatchRecord {
   distributedQuantity: string;
   remainingQty: string;
   withdrawalSchedule: WithdrawalEntry[];
-  sampleAnalyses?: SampleAnalysis[]; // Now holds all popup data
+  sampleAnalyses?: SampleAnalysis[];
 }
 
 interface WithdrawalEntry {
@@ -29,7 +29,6 @@ interface WithdrawalEntry {
   specification: string;
 }
 
-// Single interface for the combined popup data
 interface SampleAnalysis {
   chamber: string;
   location: string;
@@ -41,9 +40,7 @@ interface SampleAnalysis {
 }
 
 
-// --- COMBINED POPUP COMPONENT (REFACTORED) ---
-// Replaced YellowPopup and GreenPopup with a single component.
-
+// --- ANALYSIS POPUP COMPONENT ---
 interface AnalysisDataPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -118,6 +115,16 @@ const DataForm: React.FC = () => {
     sampleAnalyses: []
   };
 
+  // --- FIX START: Define initial popup state as a constant ---
+  const initialAnalysisData: SampleAnalysis[] = [
+    { chamber: 'QC/SC/014', location: 'T24', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
+    { chamber: 'QC/SC/014', location: 'T25', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
+    { chamber: 'QC/SC/014', location: 'T26', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
+    { chamber: 'QC/SC/014', location: 'T27', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' },
+    { chamber: 'QC/SC/014', location: 'T27', dateWithdrawn: '', quantityWithdrawn: '2', arNo: '', doneBy: '', checkedBy: '' }
+  ];
+  // --- FIX END ---
+
   const [batchRecords, setBatchRecords] = useState<BatchRecord[]>([
     {
       planNo: '2500001', product: 'CAH - Metolazone 2.5 mg Tablets',
@@ -140,16 +147,9 @@ const DataForm: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<BatchRecord>(initialRecordState);
   const [isAnalysisPopupOpen, setAnalysisPopupOpen] = useState(false);
 
-  // State for popup data is now managed here
-  const [analysisData, setAnalysisData] = useState<SampleAnalysis[]>([
-    { chamber: 'QC/SC/014', location: 'T24', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
-    { chamber: 'QC/SC/014', location: 'T25', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
-    { chamber: 'QC/SC/014', location: 'T26', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
-    { chamber: 'QC/SC/014', location: 'T27', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' },
-    { chamber: 'QC/SC/014', location: 'T27', dateWithdrawn: '', quantityWithdrawn: '2', arNo: '', doneBy: '', checkedBy: '' }
-  ]);
+  // State for popup data now uses the constant for initialization
+  const [analysisData, setAnalysisData] = useState<SampleAnalysis[]>(initialAnalysisData);
 
-  // Handler to update state, passed down to the popup
   const updateAnalysisData = (index: number, field: keyof SampleAnalysis, value: string) => {
     setAnalysisData(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
@@ -186,8 +186,11 @@ const DataForm: React.FC = () => {
       };
       setBatchRecords(prev => [completeRecord, ...prev]);
       setCurrentRecord(initialRecordState);
-      // Reset popup data for the next entry
-      setAnalysisData([ { chamber: '', location: '', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' } ]);
+
+      // --- FIX START: Reset popup data to its initial default state ---
+      setAnalysisData(initialAnalysisData);
+      // --- FIX END ---
+
     }
     setAnalysisPopupOpen(false);
     alert('Batch record saved successfully!');
@@ -195,8 +198,7 @@ const DataForm: React.FC = () => {
 
   const viewRecord = (record: BatchRecord) => {
     setCurrentRecord(record);
-    // When viewing a record, populate the popup data state as well
-    setAnalysisData(record.sampleAnalyses || [{ chamber: '', location: '', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' }]);
+    setAnalysisData(record.sampleAnalyses || initialAnalysisData); // Use default if no data exists
   };
 
   const removeRecord = (index: number) => {
@@ -221,7 +223,6 @@ const DataForm: React.FC = () => {
             </div>
 
             <div className="p-6">
-              {/* --- Data Entry Form --- */}
               <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {Object.keys(initialRecordState).filter(key => !['withdrawalSchedule', 'sampleAnalyses'].includes(key)).map((key) => {
@@ -242,7 +243,6 @@ const DataForm: React.FC = () => {
                 </div>
               </div>
 
-              {/* --- Withdrawal Schedule Section --- */}
               <div className="mt-8 border-t border-gray-200 pt-6">
                 <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
@@ -288,7 +288,6 @@ const DataForm: React.FC = () => {
                 </button>
               </div>
 
-              {/* --- Action Section --- */}
               <div className="border-t border-gray-200 pt-6 mt-8">
                 <div className="flex justify-end">
                   <button
@@ -305,7 +304,6 @@ const DataForm: React.FC = () => {
           </div>
         </div>
 
-        {/* --- Batch Records Section --- */}
         <div className="max-w-7xl mx-auto mt-8">
           <div className="bg-white rounded-lg shadow-lg border border-gray-200">
             <div className="bg-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
