@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Save, User, UserCheck, CheckCircle, Plus, Calendar, Edit3, Trash2, X, Eye, ArrowLeft } from 'lucide-react';
+import { Save, Calendar, Edit3, Trash2, X, Plus } from 'lucide-react';
 
-// --- INTERFACES (MODIFIED) ---
-// Added optional fields to store popup data with the main record
+
 interface BatchRecord {
   planNo: string;
   product: string;
@@ -19,9 +18,7 @@ interface BatchRecord {
   distributedQuantity: string;
   remainingQty: string;
   withdrawalSchedule: WithdrawalEntry[];
-  // New fields to hold data from popups
-  chamberLocations?: ChamberLocation[];
-  sampleAnalyses?: SampleAnalysis[];
+  sampleAnalyses?: SampleAnalysis[]; // Now holds all popup data
 }
 
 interface WithdrawalEntry {
@@ -32,12 +29,7 @@ interface WithdrawalEntry {
   specification: string;
 }
 
-// Interfaces for popup data
-interface ChamberLocation {
-  chamber: string;
-  location: string;
-}
-
+// Single interface for the combined popup data
 interface SampleAnalysis {
   chamber: string;
   location: string;
@@ -49,91 +41,25 @@ interface SampleAnalysis {
 }
 
 
-// --- POPUP COMPONENTS (REFACTORED) ---
-// State is now "lifted" up to the parent DataForm component.
-// Popups receive data and handler functions via props.
+// --- COMBINED POPUP COMPONENT (REFACTORED) ---
+// Replaced YellowPopup and GreenPopup with a single component.
 
-interface YellowPopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onNext: () => void;
-  chamberData: ChamberLocation[];
-  onUpdate: (index: number, field: keyof ChamberLocation, value: string) => void;
-}
-
-const YellowPopup: React.FC<YellowPopupProps> = ({ isOpen, onClose, onNext, chamberData, onUpdate }) => {
-  if (!isOpen) return null;
-
-  return (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div className="bg-yellow-100 rounded-lg shadow-xl max-w-2xl w-full mx-4">
-          <div className="bg-yellow-200 px-6 py-4 border-b border-yellow-300 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-800">Step 1: Chamber & Location Entry</h2>
-            <button onClick={onClose} className="text-gray-600 hover:text-gray-800 transition-colors">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="p-6">
-            <div className="overflow-x-auto mb-6">
-              <table className="w-full border-collapse border border-gray-400">
-                <thead>
-                <tr className="bg-yellow-300">
-                  <th className="border border-gray-400 px-4 py-3 text-left font-bold text-gray-800">Chamber</th>
-                  <th className="border border-gray-400 px-4 py-3 text-left font-bold text-gray-800">Location</th>
-                </tr>
-                </thead>
-                <tbody className="bg-yellow-50">
-                {chamberData.map((item, index) => (
-                    <tr key={index}>
-                      <td className="border border-gray-400 px-3 py-2">
-                        <input
-                            type="text"
-                            value={item.chamber}
-                            onChange={(e) => onUpdate(index, 'chamber', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-white"
-                        />
-                      </td>
-                      <td className="border border-gray-400 px-3 py-2">
-                        <input
-                            type="text"
-                            value={item.location}
-                            onChange={(e) => onUpdate(index, 'location', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-white"
-                        />
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex justify-end items-center mt-6">
-              <button onClick={onNext} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md font-semibold transition-transform transform hover:scale-105">
-                Next →
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-  );
-};
-
-interface GreenPopupProps {
+interface AnalysisDataPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
-  onGoBack: () => void;
   analysisData: SampleAnalysis[];
   onUpdate: (index: number, field: keyof SampleAnalysis, value: string) => void;
 }
 
-const GreenPopup: React.FC<GreenPopupProps> = ({ isOpen, onClose, onSave, onGoBack, analysisData, onUpdate }) => {
+const AnalysisDataPopup: React.FC<AnalysisDataPopupProps> = ({ isOpen, onClose, onSave, analysisData, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
       <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div className="bg-green-100 rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] flex flex-col">
           <div className="bg-green-200 px-6 py-4 border-b border-green-300 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-800">Step 2: Sample Analysis Data</h2>
+            <h2 className="text-xl font-bold text-gray-800">Sample Analysis Data Entry</h2>
             <button onClick={onClose} className="text-gray-600 hover:text-gray-800 transition-colors">
               <X className="w-6 h-6" />
             </button>
@@ -171,10 +97,7 @@ const GreenPopup: React.FC<GreenPopupProps> = ({ isOpen, onClose, onSave, onGoBa
               </table>
             </div>
           </div>
-          <div className="flex justify-between items-center mt-4 bg-green-200 p-4 rounded-b-lg">
-            <button onClick={onGoBack} className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-md font-semibold flex items-center gap-2 transition-transform transform hover:scale-105">
-              <ArrowLeft className="w-4 h-4" /> Go Back
-            </button>
+          <div className="flex justify-end items-center mt-4 bg-green-200 p-4 rounded-b-lg">
             <button onClick={onSave} className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-md font-semibold flex items-center gap-2 transition-transform transform hover:scale-105">
               <Save className="w-5 h-5" /> Save and Finalize
             </button>
@@ -192,7 +115,7 @@ const DataForm: React.FC = () => {
     market: '', retestExpDate: '', typeOfBatch: '', packDetails: '',
     purposeOfStudy: '', condition: '', dateOfIncubation: '',
     distributedQuantity: '', remainingQty: '', withdrawalSchedule: [],
-    chamberLocations: [], sampleAnalyses: []
+    sampleAnalyses: []
   };
 
   const [batchRecords, setBatchRecords] = useState<BatchRecord[]>([
@@ -208,10 +131,6 @@ const DataForm: React.FC = () => {
       withdrawalSchedule: [
         { dueDate: '2025-07-29', interval: '1 M', chemicalAnalysis: '04 Cartons', microAnalysis: '0 NA', specification: '' },
       ],
-      chamberLocations: [
-        { chamber: 'QC/SC/014', location: 'T24' },
-        { chamber: 'QC/SC/014', location: 'T25' },
-      ],
       sampleAnalyses: [
         { chamber: 'QC/SC/014', location: 'T24', dateWithdrawn: '2025-07-28', quantityWithdrawn: '4', arNo: 'AR-123', doneBy: 'UserA', checkedBy: 'UserB' },
       ]
@@ -219,15 +138,9 @@ const DataForm: React.FC = () => {
   ]);
 
   const [currentRecord, setCurrentRecord] = useState<BatchRecord>(initialRecordState);
-  const [yellowPopupOpen, setYellowPopupOpen] = useState(false);
-  const [greenPopupOpen, setGreenPopupOpen] = useState(false);
+  const [isAnalysisPopupOpen, setAnalysisPopupOpen] = useState(false);
 
   // State for popup data is now managed here
-  const [chamberData, setChamberData] = useState<ChamberLocation[]>([
-    { chamber: 'QC/SC/014', location: 'T24' }, { chamber: 'QC/SC/014', location: 'T25' },
-    { chamber: 'QC/SC/014', location: 'T26' }, { chamber: 'QC/SC/014', location: 'T27' },
-    { chamber: 'QC/SC/014', location: 'T27' }
-  ]);
   const [analysisData, setAnalysisData] = useState<SampleAnalysis[]>([
     { chamber: 'QC/SC/014', location: 'T24', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
     { chamber: 'QC/SC/014', location: 'T25', dateWithdrawn: '', quantityWithdrawn: '4', arNo: '', doneBy: '', checkedBy: '' },
@@ -236,10 +149,7 @@ const DataForm: React.FC = () => {
     { chamber: 'QC/SC/014', location: 'T27', dateWithdrawn: '', quantityWithdrawn: '2', arNo: '', doneBy: '', checkedBy: '' }
   ]);
 
-  // Handlers to update state, passed down to popups
-  const updateChamberData = (index: number, field: keyof ChamberLocation, value: string) => {
-    setChamberData(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
-  };
+  // Handler to update state, passed down to the popup
   const updateAnalysisData = (index: number, field: keyof SampleAnalysis, value: string) => {
     setAnalysisData(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
@@ -264,42 +174,28 @@ const DataForm: React.FC = () => {
     setCurrentRecord(prev => ({ ...prev, withdrawalSchedule: prev.withdrawalSchedule.filter((_, i) => i !== index) }));
   };
 
-  const handleYellowNext = () => {
-    setYellowPopupOpen(false);
-    setGreenPopupOpen(true);
-  };
-
-  const handleGoBack = () => {
-    setGreenPopupOpen(false);
-    setYellowPopupOpen(true);
-  };
-
-  const handleInitiateSave = () => {
-    setYellowPopupOpen(true);
+  const handleOpenAnalysisPopup = () => {
+    setAnalysisPopupOpen(true);
   };
 
   const finalizeRecord = () => {
     if (currentRecord.planNo && currentRecord.product && currentRecord.batchNo) {
       const completeRecord: BatchRecord = {
         ...currentRecord,
-        chamberLocations: chamberData,
         sampleAnalyses: analysisData
       };
       setBatchRecords(prev => [completeRecord, ...prev]);
       setCurrentRecord(initialRecordState);
-      // Optionally reset popup data for the next entry
-      setChamberData([ { chamber: '', location: '' } ]);
+      // Reset popup data for the next entry
       setAnalysisData([ { chamber: '', location: '', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' } ]);
     }
-    setGreenPopupOpen(false);
-    setYellowPopupOpen(false);
+    setAnalysisPopupOpen(false);
     alert('Batch record saved successfully!');
   };
 
   const viewRecord = (record: BatchRecord) => {
     setCurrentRecord(record);
-    // When viewing a record, populate the popup data states as well
-    setChamberData(record.chamberLocations || [{ chamber: '', location: '' }]);
+    // When viewing a record, populate the popup data state as well
     setAnalysisData(record.sampleAnalyses || [{ chamber: '', location: '', dateWithdrawn: '', quantityWithdrawn: '', arNo: '', doneBy: '', checkedBy: '' }]);
   };
 
@@ -309,18 +205,10 @@ const DataForm: React.FC = () => {
 
   return (
       <div className="p-4 md:p-8 bg-gray-50 min-h-screen font-sans">
-        <YellowPopup
-            isOpen={yellowPopupOpen}
-            onClose={() => setYellowPopupOpen(false)}
-            onNext={handleYellowNext}
-            chamberData={chamberData}
-            onUpdate={updateChamberData}
-        />
-        <GreenPopup
-            isOpen={greenPopupOpen}
-            onClose={() => setGreenPopupOpen(false)}
+        <AnalysisDataPopup
+            isOpen={isAnalysisPopupOpen}
+            onClose={() => setAnalysisPopupOpen(false)}
             onSave={finalizeRecord}
-            onGoBack={handleGoBack}
             analysisData={analysisData}
             onUpdate={updateAnalysisData}
         />
@@ -336,7 +224,7 @@ const DataForm: React.FC = () => {
               {/* --- Data Entry Form --- */}
               <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {Object.keys(initialRecordState).filter(key => !['withdrawalSchedule', 'chamberLocations', 'sampleAnalyses'].includes(key)).map((key) => {
+                  {Object.keys(initialRecordState).filter(key => !['withdrawalSchedule', 'sampleAnalyses'].includes(key)).map((key) => {
                     const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                     return (
                         <div key={key} className={['packDetails', 'purposeOfStudy'].includes(key) ? 'lg:col-span-2' : ''}>
@@ -344,7 +232,7 @@ const DataForm: React.FC = () => {
                           <input
                               id={key}
                               type={key.toLowerCase().includes('date') ? 'date' : 'text'}
-                              value={currentRecord[key as keyof Omit<BatchRecord, 'withdrawalSchedule'>] as string}
+                              value={currentRecord[key as keyof Omit<BatchRecord, 'withdrawalSchedule' | 'sampleAnalyses'>] as string}
                               onChange={(e) => handleRecordChange(key as keyof BatchRecord, e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
@@ -404,12 +292,12 @@ const DataForm: React.FC = () => {
               <div className="border-t border-gray-200 pt-6 mt-8">
                 <div className="flex justify-end">
                   <button
-                      onClick={handleInitiateSave}
+                      onClick={handleOpenAnalysisPopup}
                       className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105"
                       disabled={!currentRecord.planNo || !currentRecord.product || !currentRecord.batchNo}
                   >
                     <Save className="w-5 h-5" />
-                    Save and Proceed to Analysis
+                    Enter Analysis Data & Save
                   </button>
                 </div>
               </div>
@@ -466,3 +354,4 @@ const DataForm: React.FC = () => {
 };
 
 export default DataForm;
+
