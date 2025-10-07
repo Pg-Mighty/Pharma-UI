@@ -2,13 +2,13 @@ import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import DataForm from './components/DataForm';
 import BatchRecords from './components/BatchRecords';
-import { Home, Database, RefreshCw, FileSpreadsheet, TestTube, FileText } from 'lucide-react';
+import {RefreshCw, FileSpreadsheet, TestTube, FileText, Plus, Search} from 'lucide-react';
 
 export type TabType = 'home' | 'master' | 'change' | 'excel' | 'test' | 'report';
 
 export const tabConfig = [
-    { id: 'home' as TabType, label: 'Home', icon: Home },
-    { id: 'master' as TabType, label: 'Master', icon: Database },
+    { id: 'add' as TabType, label: 'Add Record', icon: Plus },
+    { id: 'view' as TabType, label: 'Search Records', icon: Search },
     { id: 'change' as TabType, label: 'Change', icon: RefreshCw },
     { id: 'excel' as TabType, label: 'Excel', icon: FileSpreadsheet },
     { id: 'test' as TabType, label: 'Test', icon: TestTube },
