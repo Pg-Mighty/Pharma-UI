@@ -4,7 +4,6 @@ import { Save, Calendar, Trash2, X, Plus } from 'lucide-react';
 // --- INTERFACES ---
 // This new interface combines withdrawal and analysis data for a 1:1 relationship
 interface ScheduleAndAnalysisEntry {
-    // Fields from former WithdrawalEntry
     dueDate: string;
     interval: string;
     chemicalAnalysis: string;
