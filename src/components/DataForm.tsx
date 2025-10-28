@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Save, Calendar, Trash2, X, Plus } from 'lucide-react';
+import { Save, Calendar, Edit3, Trash2, X, Plus } from 'lucide-react';
 
 // --- INTERFACES ---
 // This new interface combines withdrawal and analysis data for a 1:1 relationship
 interface ScheduleAndAnalysisEntry {
+    // Fields from former WithdrawalEntry
     dueDate: string;
     interval: string;
     chemicalAnalysis: string;
@@ -45,12 +46,11 @@ interface ScheduleDataPopupProps {
     onSave: () => void;
     schedule: ScheduleAndAnalysisEntry[];
     onUpdate: (index: number, field: keyof ScheduleAndAnalysisEntry, value: string) => void;
-    onAddRow: () => void;
     onRemoveRow: (index: number) => void;
     batchRecords: BatchRecord[];
 }
 
-const ScheduleDataPopup: React.FC<ScheduleDataPopupProps> = ({ isOpen, onClose, onSave, schedule, onUpdate, onAddRow, onRemoveRow, batchRecords }) => {
+const ScheduleDataPopup: React.FC<ScheduleDataPopupProps> = ({ isOpen, onClose, onSave, schedule, onUpdate, onRemoveRow, batchRecords }) => {
     if (!isOpen) return null;
 
     const uniqueChambers = React.useMemo(() => {
@@ -122,9 +122,6 @@ const ScheduleDataPopup: React.FC<ScheduleDataPopupProps> = ({ isOpen, onClose, 
                             </tbody>
                         </table>
                     </div>
-                    <button onClick={onAddRow} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow hover:shadow-md">
-                        <Plus className="w-4 h-4" /> Add Row
-                    </button>
                 </div>
                 <div className="flex justify-end items-center mt-4 bg-green-200 p-4 rounded-b-lg">
                     <button onClick={onSave} className="bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-md font-semibold flex items-center gap-2 transition-transform transform hover:scale-105">
@@ -173,6 +170,11 @@ const DataForm: React.FC = () => {
     };
 
     const removeScheduleRow = (index: number) => {
+        // Prevent removing the last row
+        if (currentRecord.schedule.length <= 1) {
+            alert("You must have at least one schedule row."); // Using alert as a placeholder
+            return;
+        }
         setCurrentRecord(prev => ({ ...prev, schedule: prev.schedule.filter((_, i) => i !== index) }));
     };
 
@@ -186,7 +188,8 @@ const DataForm: React.FC = () => {
             setCurrentRecord(initialRecordState); // Reset form for next entry
         }
         setPopupOpen(false);
-        alert('Batch record saved successfully!');
+        // Replaced alert with console.log for a cleaner experience
+        console.log('Batch record saved successfully!');
     };
 
     const viewRecord = (record: BatchRecord) => {
@@ -197,15 +200,30 @@ const DataForm: React.FC = () => {
         setCurrentRecord(initialRecordState);
     }
 
+    // Helper const for keys to show in the main form's editable table
+    const mainFormScheduleKeys: (keyof ScheduleAndAnalysisEntry)[] = [
+        'dueDate', 'interval', 'chemicalAnalysis', 'microAnalysis', 'specification', 'chamber', 'location'
+    ];
+
     return (
         <div className="p-4 md:p-8 bg-gray-50 min-h-screen font-sans">
+            {/* The datalist for chambers needs to be available for the main form too */}
+            <datalist id="chamber-options-main">
+                {React.useMemo(() => {
+                    const allChambers = batchRecords
+                        .flatMap(record => record.schedule || [])
+                        .map(analysis => analysis.chamber)
+                        .filter(Boolean);
+                    return [...new Set(allChambers)];
+                }, [batchRecords]).map(chamber => <option key={chamber} value={chamber} />)}
+            </datalist>
+
             <ScheduleDataPopup
                 isOpen={isPopupOpen}
                 onClose={() => setPopupOpen(false)}
                 onSave={finalizeRecord}
                 schedule={currentRecord.schedule}
                 onUpdate={updateScheduleRow}
-                onAddRow={addScheduleRow}
                 onRemoveRow={removeScheduleRow}
                 batchRecords={batchRecords}
             />
@@ -247,56 +265,76 @@ const DataForm: React.FC = () => {
                             <div className="flex justify-between items-center">
                                 <div>
                                     <h2 className="text-xl font-semibold text-gray-700">Manage Schedule</h2>
-                                    <p className="text-gray-500">Click the button to add, edit, or view withdrawal and analysis data.</p>
+                                    <p className="text-gray-500">
+                                        Current schedule has {currentRecord.schedule.length} row(s).
+                                    </p>
                                 </div>
-                                <button
-                                    onClick={handleOpenPopup}
-                                    className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105"
-                                    disabled={!currentRecord.planNo || !currentRecord.product || !currentRecord.batchNo}
-                                >
-                                    <Calendar className="w-5 h-5" />
-                                    Manage Schedule & Analysis
-                                </button>
+                                <div className="flex gap-4">
+                                    <button onClick={addScheduleRow} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow hover:shadow-md">
+                                        <Plus className="w-4 h-4" /> Add Row
+                                    </button>
+                                    <button
+                                        onClick={handleOpenPopup}
+                                        className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105"
+                                        disabled={!currentRecord.planNo || !currentRecord.product || !currentRecord.batchNo}
+                                    >
+                                        <Calendar className="w-5 h-5" />
+                                        Edit Full Analysis Data
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Displaying Saved Records (Optional - can be uncommented if needed) */}
-            <div className="max-w-7xl mx-auto mt-8">
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-                    <div className="bg-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
-                        <h1 className="text-2xl font-bold text-gray-800">Review Saved Records</h1>
-                        <p className="text-sm text-gray-600 mt-1">Click a record to load its data into the form above for editing.</p>
-                    </div>
-                    <div className="p-6">
-                        <div className="overflow-x-auto">
-                            {batchRecords.length > 0 ? (
+                        {/* --- EDITABLE SCHEDULE TABLE (Replaces Summary Table) --- */}
+                        {currentRecord.schedule.length > 0 && (
+                            <div className="mt-6 overflow-x-auto">
+                                <h3 className="text-lg font-semibold text-gray-700 mb-2">Editable Schedule</h3>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Edit primary fields here, or click "Edit Full Analysis Data" for all columns.
+                                </p>
                                 <table className="w-full border-collapse border border-gray-300">
-                                    <thead>
-                                    <tr className="bg-blue-100">
-                                        <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Plan No.</th>
-                                        <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Product</th>
-                                        <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Batch No.</th>
-                                        <th className="border border-gray-400 px-3 py-2 text-left font-bold text-gray-800">Market</th>
+                                    <thead className="bg-blue-100">
+                                    <tr>
+                                        {mainFormScheduleKeys.map(key => (
+                                            <th key={key} className="border border-gray-300 px-3 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
+                                                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                            </th>
+                                        ))}
+                                        <th className="border border-gray-300 px-3 py-3 text-left font-semibold text-gray-700">Action</th>
                                     </tr>
                                     </thead>
-                                    <tbody>
-                                    {batchRecords.map((record, index) => (
-                                        <tr key={index} className="hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => viewRecord(record)}>
-                                            <td className="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{record.planNo}</td>
-                                            <td className="border border-gray-300 px-4 py-3 text-gray-800">{record.product}</td>
-                                            <td className="border border-gray-300 px-4 py-3 text-gray-800 font-medium">{record.batchNo}</td>
-                                            <td className="border border-gray-300 px-4 py-3 text-gray-800">{record.market}</td>
+                                    <tbody className="bg-white">
+                                    {currentRecord.schedule.map((entry, index) => (
+                                        <tr key={index} className="hover:bg-blue-50">
+                                            {mainFormScheduleKeys.map(fieldKey => (
+                                                <td key={fieldKey} className="border border-gray-300 px-2 py-1">
+                                                    <input
+                                                        type={(fieldKey === 'dueDate') ? 'date' : 'text'}
+                                                        list={fieldKey === 'chamber' ? 'chamber-options-main' : undefined}
+                                                        value={entry[fieldKey]}
+                                                        onChange={(e) => updateScheduleRow(index, fieldKey, e.target.value)}
+                                                        className="w-full min-w-[120px] px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-sm"
+                                                    />
+                                                </td>
+                                            ))}
+                                            <td className="border border-gray-300 px-2 py-1 text-center">
+                                                <button
+                                                    onClick={() => removeScheduleRow(index)}
+                                                    className="text-red-600 hover:text-red-800 transition-colors p-1 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                                    title="Remove Row"
+                                                    disabled={currentRecord.schedule.length <= 1} // Disable removing the last row
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                     </tbody>
                                 </table>
-                            ) : (
-                                <p className="text-center text-gray-500 py-4">No batch records have been saved yet.</p>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                        {/* --- END OF EDITABLE TABLE --- */}
+
                     </div>
                 </div>
             </div>
